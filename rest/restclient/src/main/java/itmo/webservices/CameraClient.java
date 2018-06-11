@@ -8,6 +8,7 @@ import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.json.JSONConfiguration;
 import itmo.webservices.models.Camera;
+import sun.misc.BASE64Encoder;
 
 import javax.ws.rs.core.MediaType;
 import java.util.List;
@@ -18,6 +19,8 @@ import java.util.List;
 public class CameraClient {
     private final Client client;
     private final String url;
+    private static final String USERNAME = "user";
+    private static final String PASS = "password";
 
     public CameraClient(String url) {
         this.url = url;
@@ -37,6 +40,7 @@ public class CameraClient {
         }
 
         final ClientResponse response = webResource
+                .header("Authorization", "Basic " + encryptAuth())
                 .accept(MediaType.APPLICATION_JSON_TYPE)
                 .get(ClientResponse.class);
 
@@ -52,6 +56,7 @@ public class CameraClient {
     public List<Camera> findAll() {
         WebResource webResource = client.resource(url);
         final ClientResponse response = webResource
+                .header("Authorization", "Basic " + encryptAuth())
                 .accept(MediaType.APPLICATION_JSON_TYPE)
                 .get(ClientResponse.class);
 
@@ -73,6 +78,7 @@ public class CameraClient {
                 .queryParam("fixedLens", fixedLens);
 
         ClientResponse response = resource
+                .header("Authorization", "Basic " + encryptAuth())
                 .accept(MediaType.APPLICATION_JSON_TYPE)
                 .post(ClientResponse.class);
 
@@ -91,6 +97,7 @@ public class CameraClient {
                 .queryParam("fixedLens", fixedLens);
 
         ClientResponse response = resource
+                .header("Authorization", "Basic " + encryptAuth())
                 .accept(MediaType.APPLICATION_JSON_TYPE)
                 .put(ClientResponse.class);
 
@@ -104,12 +111,18 @@ public class CameraClient {
                 .queryParam("id", id);
 
         ClientResponse response = resource
+                .header("Authorization", "Basic " + encryptAuth())
                 .accept(MediaType.APPLICATION_JSON_TYPE)
                 .delete(ClientResponse.class);
 
         if (response.getStatus() != ClientResponse.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Delete request failed");
         }
+    }
+
+    private String encryptAuth() {
+        String authString = USERNAME + ":" + PASS;
+        return new BASE64Encoder().encode(authString.getBytes());
     }
 }
 

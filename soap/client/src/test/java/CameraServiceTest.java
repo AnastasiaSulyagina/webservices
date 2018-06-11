@@ -3,6 +3,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.xml.ws.BindingProvider;
 import javax.xml.ws.ProtocolException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -24,6 +25,9 @@ public class CameraServiceTest {
     protected void init() throws MalformedURLException  {
         cs = new CameraService(new URL("http://localhost:8080/CameraService?wsdl"));
         ws = cs.getCameraWebServicePort();
+        BindingProvider p = (BindingProvider) ws;
+        p.getRequestContext().put(BindingProvider.USERNAME_PROPERTY, "user");
+        p.getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, "password");
     }
 
     @Test

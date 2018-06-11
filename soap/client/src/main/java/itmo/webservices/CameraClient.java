@@ -1,6 +1,7 @@
 package itmo.webservices;
 
 
+import javax.xml.ws.BindingProvider;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
@@ -16,6 +17,10 @@ public class CameraClient {
         try {
             cs = new CameraService(new URL("http://localhost:8080/CameraService?wsdl"));
             ws = cs.getCameraWebServicePort();
+
+            BindingProvider p = (BindingProvider) ws;
+            p.getRequestContext().put(BindingProvider.USERNAME_PROPERTY, "user");
+            p.getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, "password");
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }

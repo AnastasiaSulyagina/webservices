@@ -16,6 +16,7 @@ import itmo.webservices.models.CameraType;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import java.util.Base64;
 import java.util.List;
 
 @Path("/cameras")
@@ -23,21 +24,28 @@ import java.util.List;
 public class CameraResource {
     private final CameraDao cameraDao = new CameraDaoImpl();
 
+    private static final String USERNAME = "user";
+    private static final String PASS = "password";
+
     @GET
-    public List<Camera> find(@QueryParam("model") String model,
+    public List<Camera> find(@HeaderParam("authorization") String authString,
+                             @QueryParam("model") String model,
                              @QueryParam("brand") Brand brand,
                              @QueryParam("fullFrame") Boolean fullFrame,
                              @QueryParam("cameraType") CameraType cameraType,
                              @QueryParam("fixedLens") Boolean fixedLens) {
+        checkAuth(authString);
         return cameraDao.find(model, brand, fullFrame, cameraType, fixedLens);
     }
 
     @POST
-    public long create(@QueryParam("model") String model,
+    public long create(@HeaderParam("authorization") String authString,
+                       @QueryParam("model") String model,
                        @QueryParam("brand") Brand brand,
                        @QueryParam("fullFrame") Boolean fullFrame,
                        @QueryParam("cameraType") CameraType cameraType,
                        @QueryParam("fixedLens") Boolean fixedLens) {
+        checkAuth(authString);
         if (model == null) {
             throw new CameraServiceCreationException("model");
         }
@@ -57,12 +65,14 @@ public class CameraResource {
     }
 
     @PUT
-    public OperationStatus update(@QueryParam("id") Integer id,
-                           @QueryParam("model") String model,
-                           @QueryParam("brand") Brand brand,
-                           @QueryParam("fullFrame") Boolean fullFrame,
-                           @QueryParam("cameraType") CameraType cameraType,
-                           @QueryParam("fixedLens") Boolean fixedLens) {
+    public OperationStatus update(@HeaderParam("authorization") String authString,
+                                  @QueryParam("id") Integer id,
+                                   @QueryParam("model") String model,
+                                   @QueryParam("brand") Brand brand,
+                                   @QueryParam("fullFrame") Boolean fullFrame,
+                                   @QueryParam("cameraType") CameraType cameraType,
+                                   @QueryParam("fixedLens") Boolean fixedLens) {
+        checkAuth(authString);
         if (id == null) {
             throw new CameraServiceUpdateException("id");
         }
@@ -87,7 +97,9 @@ public class CameraResource {
     }
 
     @DELETE
-    public OperationStatus delete(@QueryParam("id") Integer id) {
+    public OperationStatus delete(@HeaderParam("authorization") String authString,
+                                  @QueryParam("id") Integer id) {
+        checkAuth(authString);
         if (id == null) {
             throw new CameraServiceException("Unable to delete camera record",
                     new CameraServiceException.Detail("Null field: id"));
@@ -95,6 +107,19 @@ public class CameraResource {
         return cameraDao.delete(id) ?
                 OperationStatus.SUCCESS :
                 OperationStatus.FAILURE;
+    }
+
+    private void checkAuth(String authStr) throws CameraServiceException {
+        String[] authParts = authStr.split(" ");
+        if (authParts.length > 1) {
+            String decodedAuth = new String(Base64.getDecoder().decode(authParts[1]));
+            String[] loginPass = decodedAuth.split(":");
+            if (USERNAME.equals(loginPass[0]) && PASS.equals(loginPass[1])) {
+                return;
+            }
+        }
+        throw new CameraServiceException("Authorisation failed.",
+                new CameraServiceException.Detail("Login-password pair does not match"));
     }
 }
 
